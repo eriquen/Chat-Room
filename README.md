@@ -1,5 +1,5 @@
 # Chat-Room
-Chat Room using HTML5, CSS, Express.js, and JQuery. Use Socket.io to connect to the chat server.
+Chat Room using HTML5, CSS, and JQuery. Use Socket.io to connect to the Express.js server.
 
 ### Requirement 
 Node.js<br>
