@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Client</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            margin-top: 30px;
+        }
+
+        #messageArea {
+            display: none;
+        }
+
+        .chat {
+            height: 300px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="userFormArea" class="row justify-content-center">
+            <div class="col-md-6 border ">
+                <form action="" id="userForm">
+                    <div class="form-group">
+                        <label for="" class="mt-2">Enter username</label>
+                        <input type="text" class="form-control" id="username">
+                        <p class="text-danger" id="userError"></p>
+                        <br />
+                        <input type="submit" value="Login" class="btn btn-primary">
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row" id="messageArea">
+            <div class="col-md-4">
+                <div class="card card-body bg-light">
+                    <div class="d-flex justify-content-between m-2">
+                        <h3>Online Users</h3>
+                        <a href="javascript:location.reload(true)" class="btn btn-primary d-flex align-items-center"
+                            data-toggle="tooltip" data-placement="top" title="Logout">
+                            <svg class="bi bi-box-arrow-in-right" width="1.5em" height="1.5em" viewBox="0 0 16 16"
+                                fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd"
+                                    d="M8.146 11.354a.5.5 0 0 1 0-.708L10.793 8 8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0z" />
+                                <path fill-rule="evenodd"
+                                    d="M1 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 1 8z" />
+                                <path fill-rule="evenodd"
+                                    d="M13.5 14.5A1.5 1.5 0 0 0 15 13V3a1.5 1.5 0 0 0-1.5-1.5h-8A1.5 1.5 0 0 0 4 3v1.5a.5.5 0 0 0 1 0V3a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-8A.5.5 0 0 1 5 13v-1.5a.5.5 0 0 0-1 0V13a1.5 1.5 0 0 0 1.5 1.5h8z" />
+                            </svg>
+                        </a>
+                    </div>
+                    <ul class="list-group" id="users">
+
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-8 border pt-3 rounded">
+                <div class="row">
+                    <div id="title" class="ml-3 mb-3"> </div>
+                </div>
+                <div class="row border-top">
+                    <div class="col-md-12">
+
+                        <div class="chat p-3" id="chat">
+                           
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            <form action="" id="messageForm">
+                                <div class="form-group">
+                                    <div class="d-flex align-bottom">
+                                        <input type="text" name="" id="message" class="form-control mr-3"
+                                            placeholder="Enter Message"></input>
+                                        <input type="submit" value="Send Message" class="btn btn-primary">
+                                    </div>
+
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // function to start jquery
+        $(function () {
+            // get html element by id
+            var socket = io.connect();
+            var $messageForm = $('#messageForm');
+            var $message = $('#message');
+            var $chat = $('#chat');
+            var $messageArea = $('#messageArea');
+            var $userFormArea = $('#userFormArea');
+            var $userForm = $('#userForm');
+            var $users = $('#users');
+            var $username = $('#username');
+            var $userError = $('#userError');
+            var $headTitle = $('#title');
+            $('[data-toggle="tooltip"]').tooltip()
+
+            
+            
+            // detect when user press username login button
+            $userForm.submit(function (e) {
+                // prevent default button behavior
+                e.preventDefault();
+                // assign user to global variable
+                user = $username.val()
+                // send username to client to create new user
+                socket.emit('new user', user, function (data) {
+                    // if the user created
+                    if (data) {
+                        // display username at group chat
+                        $headTitle.append(
+                            '<h1>Group Chat <button type="button" class="btn btn-info btn-sm">' +
+                            user + '</button></h1>');
+                        // hide username input page
+                        $userFormArea.hide();
+                        // display group chat
+                        $messageArea.css("display", "flex");
+                    } else {
+                        // if false, username already taken and display the warning
+                        $userError.html('That username is already taken!. Try again.');
+                    }
+                });
+                // empty the field
+                $username.val('');
+            });
+
+            // detect when user press send button
+            $messageForm.submit(function (e) {
+                // prevent default button behavior
+                e.preventDefault();
+                // send the message to the server
+                socket.emit('send message', $message.val(), function (data) {
+                    // server respond back if msg is empty or user not found for private message
+                    $chat.append('<div class="card card-body bg-light">!' + data + '</div>');
+                });
+                // empty the user chat input fill
+                $message.val('');
+            });
+
+
+            // receive data from server to broadcast the message the group chat
+            socket.on('new message', function (data) {
+                console.log(data);
+                // check if sender ==  receiver display the mesasge on the right
+                if (user === data.user) {
+                    $chat.append('<div class=" text-right mb-4 " style="color: ' + data.color +
+                        ';"> <span class = "bg-light p-2 rounded border">' + data.user + ": " + data
+                        .msg +
+                        '</span></div>');
+                } else {
+                    // else display the mesasge on the left
+                    $chat.append('<div class="mb-4" style="color: ' + data.color +
+                        ';"> <span class = "bg-light p-2 rounded border">' + data.user + ": " + data
+                        .msg +
+                        '</span></div>');
+                }
+
+            });
+            // receive msg from server for private message
+            socket.on('private message', function (data) {
+                // display the message to user
+                $chat.append(
+                    '<div class="mb-4 font-italic"> <span class = "bg-light p-2 rounded border">(Private)' +
+                    data.user + ": " + data
+                    .msg +
+                    '</span></div>');
+            });
+
+            // get list of user
+            socket.on('get users', function (data) {
+                var html = '';
+                // loop the array and assign to html tag
+                for (i = 0; i < data.length; i++) {
+                    html += '<li class="list-group-item p-2">' + data[i] + '</li>';
+                }
+                // then display to online user section
+                $users.html(html);
+            });
+
+
+        });
+    </script>
+</body>
+
+</html>
